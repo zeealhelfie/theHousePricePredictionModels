@@ -1,0 +1,198 @@
+---
+title: "housepriceII"
+author: "Zahraa Alshalal"
+date: "2023-04-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+## libraries
+install.packages("moderndive")
+library('ggplot2')
+library('scales')
+library('dplyr') 
+library('randomForest') 
+library('data.table')
+library('gridExtra')
+library('corrplot') 
+library('e1071')
+library(caret)
+library(glmnet)
+```
+
+```{r}
+#import data
+data = read.csv("~/Desktop/spring23/math448/project/house_data.csv")
+glimpse(data)
+```   
+```{r}
+# Check if there are any missing values in the data
+any(is.na(data))
+```    
+   
+```{r}
+names(data)
+dim(data)
+```   
+```{r}
+# linear regression
+model = lm(price ~ . - id - date - sqft_basement, data = data)
+summary(model)
+```
+
+```{r}
+cor_matrix<-cor(data[,c(3,4,5,6,7,8,9,10,11,12,13)])
+cor_matrix
+corrplot(cor_matrix)
+```    
+
+
+```{r}
+# Fit a linear regression model to predict price from multiple variables
+model <- lm(price ~ bathrooms + sqft_living + sqft_above + grade, data = data)
+
+# Print the model summary
+summary(model)
+```       
+```{r}
+
+# Define the predictor matrix X and response vector y
+x = model.matrix(price ~ bathrooms + sqft_living + sqft_above + grade, data = train_data)
+y = data$price
+
+# Fit the Lasso regression model using cross-validation to select the tuning parameter lambda
+lasso = cv.glmnet(X, y, alpha = 1)
+
+# Extract the optimal value of lambda
+lambda = lasso$lambda.min
+lambda
+
+# Fit the Lasso regression model using the optimal lambda value
+lasso_model = glmnet(X, y, alpha = 1, lambda = lambda)
+
+
+# Print the coefficients of the Lasso regression model
+print(coef(lasso_model))
+
+```    
+### Modeling:    
+```{r}
+# Normalize the predictors in the data_train data frame
+data_train_norm <- as.data.frame(scale(data_train[, c("sqft_living", "grade")]))
+
+# Add the price variable back to the normalized data frame
+data_train_norm$price <- data_train$price
+
+# Calculate the scaling parameters for the predictors in the training data
+center <- apply(data_train[, c("sqft_living", "grade")], 2, mean)
+scale <- apply(data_train[, c("sqft_living", "grade")], 2, sd)
+
+# Normalize the predictors in the data_test data frame using the scaling parameters from the training data
+data_test_norm <- as.data.frame(scale(data_test[, c("sqft_living", "grade")], center = center, scale = scale))
+
+# Add the price variable back to the normalized data frame
+data_test_norm$price <- data_test$price
+
+# Fit a linear regression model to predict price from the normalized predictors using training data
+model_norm <- lm(price ~ sqft_living + grade, data = data_train_norm)
+
+# Generate predicted values for the normalized test data using the model
+y_pred_norm <- predict(model_norm, newdata = data_test_norm)
+
+# De-normalize the predicted values back to the original scale
+y_pred <- y_pred_norm * scale[2] + center[2]
+
+# Calculate the MSE, RMSE, and MAE
+mse <- mean((data_test$price - y_pred)^2)
+rmse <- sqrt(mse)
+mae <- mean(abs(data_test$price - y_pred))
+
+# Print the MSE, RMSE, and MAE
+cat("MSE:", mse, "\n")
+cat("RMSE:", rmse, "\n")
+cat("MAE:", mae, "\n")
+
+
+```
+
+```{r}
+# Normalize the predictors in the data_train data frame
+data_train_norm = as.data.frame(scale(data_train[, c("sqft_living", "grade")]))
+data_train_norm$price = data_train$price
+
+# Normalize the predictors in the data_test data frame
+data_test_norm = as.data.frame(scale(data_test[, c("sqft_living", "grade")]))
+# Add the price variable back to the normalized data frame
+data_test_norm$price = data_test$price
+
+# Fit a linear regression model to predict price from the normalized predictors using training data
+model_norm = lm(price ~ sqft_living + grade, data = data_train_norm)
+
+# Print the model summary
+summary(model_norm)
+```      
+```{r}
+# Generate predicted values for the normalized test data using the model
+y_pred_norm <- predict(model_norm, newdata = data_test_norm)
+
+# De-normalize the predicted values back to the original scale
+y_pred <- y_pred_norm * attr(data_train[, c("sqft_living", "grade")], "scaled:scale")[2] + attr(data_train[, c("sqft_living", "grade")], "scaled:center")[2]
+
+
+# Calculate the MSE, RMSE, and MAE using non-missing values
+mse <- mean((data_test$price[!is.na(data_test$price)] - y_pred[!is.na(y_pred)])^2)
+rmse <- sqrt(mse)
+mae <- mean(abs(data_test$price[!is.na(data_test$price)] - y_pred[!is.na(y_pred)]))
+
+# Print the MSE, RMSE, and MAE
+cat("MSE:", mse, "\n")
+cat("RMSE:", rmse, "\n")
+cat("MAE:", mae, "\n")
+
+```
+
+
+```{r}
+# Split data into training and test sets
+set.seed(123)
+train_index <- createDataPartition(data$price, p = 0.8, list = FALSE)
+train_data <- data[train_index, ]
+test_data <- data[-train_index, ]
+
+# Fit a linear regression model to predict price from multiple variables
+model <- lm(price ~ bathrooms + sqft_living + sqft_above + grade, data = train_data)
+
+# Print the model summary
+summary(model)
+
+# Use LassoCV to fit a Lasso regression model
+x <- model.matrix(price ~ bathrooms + sqft_living + sqft_above + grade, data = train_data)
+y <- train_data$price
+cv_model <- cv.glmnet(x, y, alpha = 1)
+plot(cv_model)
+
+# Get the optimal lambda value
+lambda_opt <- cv_model$lambda.min
+lambda_opt
+# Fit a Lasso regression model using the optimal lambda value
+lasso_model <- glmnet(x, y, alpha = 1, lambda = lambda_opt)
+plot(lasso_model, xvar = "lambda")
+
+# Get the coefficients of the Lasso regression model
+lasso_coef <- coef(lasso_model)
+print(lasso_coef)
+
+# Make predictions on the test set using the Lasso regression model
+test_x <- model.matrix(price ~ bathrooms + sqft_living + sqft_above + grade, data = test_data)
+test_y <- predict(lasso_model, newx = test_x)
+test_rmse <- sqrt(mean((test_y - test_data$price)^2))
+print(test_rmse)
+```
+
+
+
+

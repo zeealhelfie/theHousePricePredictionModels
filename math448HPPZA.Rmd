@@ -1,0 +1,218 @@
+---
+title: "Predicting House Prices"
+author: "Zahraa Alshalal"
+date: '2023-03-17'
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## libraries
+
+```{r}
+install.packages("moderndive")
+```
+```{r}
+# packages
+library(dplyr)
+library(plotly)
+library(tidyverse)
+library(MASS)
+library(DataExplorer)
+library(Hmisc)
+library(polycor)
+library(corrplot)
+library(htmlwidgets)
+library(moderndive)
+library(leaps)
+library('IRdisplay')
+
+```
+
+
+------------------------------------------------------------------------
+
+```{r}
+#import data
+housedata = read.csv("~/Desktop/spring23/math448/project/house_data.csv")
+# look at the data
+glimpse(housedata)
+```
+
+```{r}
+#Summary of Data
+summary(housedata)
+#unique(housedata$yr_renovated)
+```
+
+```{r}
+#Structure of Data 
+data_info <- str(housedata, vec.len = 0)
+data_info <- gsub(".*: ", "", data_info)
+cat(data_info)
+
+```
+
+```{r}
+#Checking Null Value
+sum(is.na(housedata))
+```
+
+```{r}
+#Correlation
+data_cor = cor(housedata[,c(3,4,5,6,7,8,9,10,11,12,13,14,15,16,17)])
+data_cor
+
+corrplot(data_cor)
+pairs(data_cor)
+```
+
+```{r}
+
+# the number of bedroom's in houses
+bedrooms_count = housedata%>%group_by(bedrooms)%>%summarise(Number=length(bedrooms))
+head(bedrooms_count)
+
+ggplot(bedrooms_count, aes(as.factor(bedrooms), Number, fill=bedrooms)) + geom_bar(stat='Identity') + labs(title='Count by Bedrooms') + theme_bw() 
+
+```
+
+```{r}
+# the number of bathrooms
+bathrooms_count = housedata%>%group_by(bathrooms)%>%summarise(Number=length(bathrooms))
+head(bathrooms_count)
+
+ggplot(bathrooms_count, aes(as.factor(bathrooms), Number, fill=bathrooms)) + geom_bar(stat='Identity')  + labs(title='Count by Bathrooms') + theme_bw() 
+
+```
+
+```{r}
+#the number of floors are there
+housefloor = housedata%>%group_by(floors)%>%summarise(housefloor=length(floors))
+housefloor
+
+ggplot(housefloor, aes(as.factor(floors), housefloor, fill=floors)) + geom_bar(stat='Identity') + labs(title='Count of Floors', y='Count') +  theme_bw()
+
+
+```
+
+```{r}
+#waterfront   
+waterfront = housedata%>%group_by(waterfront)%>%summarise(waterfront_area=length(waterfront))
+waterfront
+
+ggplot(waterfront, aes(as.factor(waterfront), waterfront_area, fill=waterfront_area)) + geom_bar(stat='Identity') + labs(title='Count by Sea Front', y='Count') + theme_bw()
+```
+
+```{r}
+#view
+view =  housedata%>%group_by(view)%>%summarise(View_area=length(view))
+view
+
+ggplot(view, aes(as.factor(view), View_area, fill=View_area)) + geom_bar(stat='Identity') + labs(title='Count by View', y='Count') + theme_bw()
+
+```
+
+```{r}
+#Condition of the house
+condition = housedata%>%group_by(condition)%>%summarise(house_condition=length(condition))
+condition
+
+ggplot(condition, aes(as.factor(condition), house_condition, fill=condition)) + geom_bar(stat='Identity') + labs(title='Count by House Condition', y='Count') + theme_bw()
+```
+
+```{r}
+#Count of house renovated by Year
+renovated_Year = housedata%>%group_by(yr_renovated)%>%summarise(house_renovated=length(yr_renovated))%>%arrange(desc(house_renovated))
+
+head(renovated_Year)
+```
+
+```{r}
+#the number of house renovated after 2010
+
+renovated_aftr_2010<-subset(renovated_Year, renovated_Year$yr_renovated>1900)
+
+ggplot(renovated_aftr_2010, aes(yr_renovated ,house_renovated, fill=house_renovated)) + geom_bar(stat='Identity') + labs(title='Houses Renovated', y='Count', x='Year') + theme_bw()
+```
+
+```{r}
+#Count of house Build by Year  
+house_build_year = housedata%>%group_by(yr_built)%>%summarise(No_build_house=length(yr_built))%>%arrange(desc(No_build_house))
+
+head(house_build_year)
+```
+
+```{r}
+#house built after 2010 
+
+house_build_aftr_2010 = filter(house_build_year, house_build_year$yr_built>2010)
+
+ggplot(house_build_aftr_2010, aes(yr_built, No_build_house, fill=No_build_house)) + geom_bar(stat='Identity') + labs(title='Count of House Build by Year', x='Year', y='Count') + theme_bw()
+```
+
+```{r}
+#the average sq ft of basement by bedrooms
+sqft_basement_besment = housedata%>%group_by(bedrooms)%>%summarise(sq_ft_basement=mean(sqft_basement))%>%top_n(5)
+
+head(sqft_basement_besment)
+
+ggplot(sqft_basement_besment, aes(bedrooms ,sq_ft_basement, fill = sq_ft_basement)) + geom_bar(stat='Identity') + theme_bw() + labs(title='Average Sq ft of Basement by Bedrooms', y='Sq ft Basement')
+```     
+## Modelling: Feature Selection     
+
++ Linear model:
+```{r}
+
+# Perform linear regression of price against all features in the dataset
+
+model = lm(price ~ . - id - date - sqft_basement, data = housedata)
+summary_model <- summary(model)
+p_values <- summary_model$coefficients[, "Pr(>|t|)"]
+p_values
+
+```
+
+
+```{r}
+# Load the housing price data
+
+# Perform best subset selection
+best_subset <- regsubsets(price ~ . - id - date - sqft_basement,
+                          data = housedata,
+                          nvmax = NULL,
+                          method = "exhaustive")
+
+# Get the summary of the best subset selection
+summary_best_subset <- summary(best_subset)
+summary_best_subset
+# Print the best subset selection results
+as.data.frame(summary_best_subset$outmat)
+
+```    
+```{r}
+# Stepwise regression model
+step.model <- stepAIC(model, direction = "both", 
+                      trace = FALSE)
+summary(step.model)
+```
+
+```{r}
+best_subset_index <- which.max(summary_best_subset$adjr2)
+cat("Best subset index:", best_subset_index, "\n")
+```    
+```{r}
+row_index <- 17
+row <- summary_best_subset$which[row_index, ]
+print(row, quote = FALSE)
+```
+
+
+
+
+
+
+
+
