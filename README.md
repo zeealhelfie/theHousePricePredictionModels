@@ -151,6 +151,8 @@ The dataset was split into training and testing: randomly partitioned the data, 
 
 ## Results:
 
+The results of our house price prediction models are summarized in the table above. Among the regression models, Lasso, ElasticNet, Linear Regression, Ridge, and Bagging demonstrated similar performance, with MAE values ranging from 0.199276 to 0.201649. These models achieved an R2 Score of approximately 0.76, indicating that they can explain around 76% of the variance in house prices. The Decision Tree model outperformed the regression models in terms of MAE (0.177384) and achieved an R2 Score of 0.776211. This suggests that decision trees effectively capture non-linear relationships and patterns in the data. Among the classification models, SVR, Gradient Boosting, Random Forest Regressor, and XGB Regressor showcased outstanding performance. These models achieved lower MAE and MSE values compared to the regression models. The XGB Regressor exhibited the best performance with an MAE of 0.121751, MSE of 0.028441, and an impressive R2 Score of 0.899278. Overall, the results indicate that the ensemble-based models, including Gradient Boosting, Random Forest Regressor, and XGB Regressor, provide the highest predictive accuracy for house price prediction. 
+
 <img width="690" alt="models results" src="https://github.com/zeealhelfie/theHousePricePredictionModels/assets/60905286/154f7bda-70d4-4c5f-ba38-2ae5f1178b5e">
 
 ![r^2plot](https://github.com/zeealhelfie/theHousePricePredictionModels/assets/60905286/f7b5556f-6b43-4be9-8f15-69a9a067951c)
@@ -158,11 +160,17 @@ The dataset was split into training and testing: randomly partitioned the data, 
 
 ## Conclusion: 
 
-- Model Performance:  the lowest MAE and MSE values, indicating better accuracy and lower prediction errors compared to other models.
-- Generalization Ability: the highest R-squared scores, suggesting that they can explain a significant portion of the variation in house prices.
-- Promising Models: SVR, Gradient Boosting, RandomForestRegressor, and XGBRegressor consistently performed well across multiple evaluation metrics. 
-- Tree-Based Models: highlighting the effectiveness of tree-based methods in capturing complex relationships in the data.
-- Regularization Techniques: outperformed others in terms of MAE and MSE, indicating their ability to select important features and control model complexity through regularization.
+In conclusion, the analysis demonstrates the effectiveness of various regression and classification models for predicting house prices based on a broad set of features. The ensemble models, specifically Gradient Boosting, Random Forest Regressor, and XGB Regressor, exceeded the other models, displaying lower MAE and MSE values and higher R2 Scores. The results of this analysis have important implications for stakeholders in the real estate industry, such as homebuyers, sellers, and investors. Accurate house price predictions enable informed decision-making and can assist in determining fair market values, identifying investment opportunities, and optimizing pricing strategies.
 
+## Future Directions:
+
+Proceeding ahead, there are several advances  for future research and improvement in house price prediction:
+
+- Exploring additional relevant features.
+- Investigating more advanced machine learning algorithms.
+- Updating the Model As new data becomes available.
+- Enhancing model interpretability.
+
+By addressing these improvements, we can continue to enhance house price prediction models, delivering valuable tools for different industries and individuals.
 
 
